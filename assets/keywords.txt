@@ -1,0 +1,12 @@
+if
+elif
+else
+for
+while
+in
+let
+class
+function
+type
+new
+inherits
