@@ -1,13 +1,15 @@
 def is_number(string: str):
   try:
     parse = int(string)
-    return (True, 'int' if not '.' in string else 'float')
+    return (True, 'int')
   
   except:
     try:
       parse = float(string)
-      return (True, 'int' if not '.' in string else 'float')
+      return (True, 'float')
     
     except:
       return (False, None)
+    
+
 
