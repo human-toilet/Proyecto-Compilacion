@@ -1,15 +1,14 @@
 #dependencias
 from tokens import *
-from utils import is_number
+from utils import is_number, is_boolean
 
-#token
 class Token():
   def __init__(self, value: str, token_type: str):
     self._value = value
     self._token_type = token_type
     
   def __repr__(self) -> str:
-    return f'{self._token_type} {self._value}'
+    return f'({self._token_type}) {self._value}'
   
   @property
   def value(self) -> str: return self._value
@@ -30,10 +29,10 @@ class Lexer:
     for char in f'{self._text}$':
       #si llegue al final de la cadena
       if char == '$':
-        if token != '':
-          result.append(self._type_token(token))
-          result.append(Token('$', 'end'))
+        result.append(self._type_token(token))
+        result.append(Token('$', 'end'))
       
+      #si hay una comilla sin cerrar
       elif self._open_cuote:
         if char == '"':
           token += char
@@ -67,33 +66,7 @@ class Lexer:
             result.append(self._type_token(token))
             token = char
 
-        #si el token es un numero 
-        elif is_number(token)[0]:
-          #un numero concatenado con un numero sigue sindo un numero
-          if is_number(char)[0]:
-            token += char
-
-          #si tiene una vez solamente '.'
-          elif len(list(filter(lambda x: x == '.', token))) == 1:
-            #si se le concatena un numero seria un float
-            if is_number(char)[0]:
-              token += char
-
-            #ya no es un numero y no puede ser un id xq un id no puede empezar con un numero
-            else:
-              result.append(self._type_token(token))
-              token = char
-
-          #si no tiene '.' al agregarselo al final es un float
-          elif char == '.':
-            token += char
-
-          #ya no es un numero
-          else:
-            result.append(self._type_token(token))
-            token = char
-
-        #el token no es un numero
+        #el token no es un operador
         else:
           #lo unico que no puede tener es un operador
           if char in OPERATORS:
@@ -117,6 +90,12 @@ class Lexer:
   
   #determinar el tipo de token
   def _type_token(self, token) -> Token:
+    if token == '':
+      return Token('', 'epsilon')
+    
+    elif is_boolean(token):
+      return Token(token, 'boolean')
+    
     temp = is_number(token)
 
     if temp[0]:
@@ -136,20 +115,24 @@ class Lexer:
   #saber si los tokens son validos
   def _valid_tokens(self):
     if self._open_cuote:
+      self._open_cuote = False
       return (False, 'Missed "')
     
     for token in self._tokens:
       if token.token_type == 'id':
+        #si empieza con un numero
+        if is_number(token.value[0])[0]:
+          return (False, f'Invalid syntax: "{token.value}"')
+    
+        #si contiene un token invalido
         for element in INVALID_ID:
           if element in token.value:
-            return (False, f'Invalid token: "{element}"')
+            return (False, f'Invalid syntax: "{token.value}"')
       
     return (True, 'ok')
         
   @property
   def tokens(self) -> list: return self._tokens if self._valid_tokens()[0] else self._valid_tokens()[1]
   
-print(Lexer('sex "k"g').tokens)
-
   
 
