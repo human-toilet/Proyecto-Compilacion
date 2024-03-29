@@ -1,6 +1,20 @@
 #dependencias
-from load import *
+from tokens import *
 from utils import is_number
+
+#token
+class Token():
+  def __init__(self, value: str, token_type: str):
+    self.__value = value
+    self.__token_type = token_type
+    
+  def __repr__(self) -> str:
+    return f'{self.__token_type}({self.__value})'
+  
+  @property
+  def value(self) -> str: return self.__value
+  @property
+  def token_type(self) -> str: return self.__token_type
 
 #tokenizar una cadena
 def tokenize(string: str) -> list:
@@ -83,11 +97,16 @@ def tokenize(string: str) -> list:
   return result
        
 #determinar el tipo de token           
-def type_token(token) -> str:
-  if is_number(token)[0]:
-    return is_number(token)[1]
+def type_token(token) -> Token:
+  temp = is_number(token)
   
-  if token in KEYWORDS or token in OPERATORS:
-    return token
+  if temp[0]:
+    return Token(temp[1][1], temp[1][0])
   
-  return 'id'
+  if token in KEYWORDS:
+    return Token(token, 'keyword')
+  
+  if token in OPERATORS:
+    return Token(token, 'operator')
+  
+  return Token(token, 'id')
