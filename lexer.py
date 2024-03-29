@@ -53,7 +53,7 @@ class Lexer:
         if token in OPERATORS:
           if len(token) == 1:
             #todo token de len = 1 mas '=' es un operador
-            if char == '=':
+            if char == '=' and not token in ['^', '|', '&']:
               token += char
  
             #si no es el igual ya no es un operador y no puede seguir xq el operador no puede estar dentro de un id
