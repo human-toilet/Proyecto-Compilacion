@@ -11,5 +11,6 @@ A %= num + plus + A | num
 sym_set = { 
     '<number>': num,
     '+': plus,
-    '=': equal
+    '=': equal,
+    'end': G.EOF
 }

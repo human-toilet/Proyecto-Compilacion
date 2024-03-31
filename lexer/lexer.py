@@ -1,6 +1,6 @@
 #dependencias
-from tokens import *
-from utils import *
+from lexer.tokens import *
+from lexer.utils import *
 
 class Token():
   def __init__(self, value: str, token_type: str, line = None, col = None):
