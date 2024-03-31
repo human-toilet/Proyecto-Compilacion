@@ -2,12 +2,12 @@
 def is_number(string: str):
   try:
     parse = int(string)
-    return (True, ('int', parse))
+    return (True, ('<number>', parse))
   
   except:
     try:
       parse = float(string)
-      return (True, ('float', parse))
+      return (True, ('<number>', parse))
     
     except:
       return (False, None)
