@@ -125,7 +125,7 @@ class Lexer:
   def __type_token(self, token: str):
     #si es un booleano
     if is_boolean(token):
-      return Token(token, '< boolean >')
+      return Token(token, 'boolean')
     
     temp = is_number(token)
     #si es un numero
@@ -134,18 +134,18 @@ class Lexer:
 
     #si es una keyword
     if token in KEYWORDS:
-      return Token(token, f'< {token} >', self.__current_line, self.__current_col)
+      return Token(token, token, self.__current_line, self.__current_col)
 
     #si es un operador
     if token in OPERATORS:
-      return Token(token, f'< {token} >', self.__current_line, self.__current_col)  
+      return Token(token, token, self.__current_line, self.__current_col)  
 
     #si es un string
     if token[0] == '"' and token[len(token) - 1] == '"':
-      return Token(token, '< string >', self.__current_line, self.__current_col) 
+      return Token(token, '<string>', self.__current_line, self.__current_col) 
     
     #es un id
-    return Token(token, '< id >', self.__current_line, self.__current_col) 
+    return Token(token, '<id>', self.__current_line, self.__current_col) 
   
   #control de errores
   def __valid_tokens(self):
