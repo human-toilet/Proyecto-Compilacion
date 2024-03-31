@@ -1,6 +1,6 @@
 #dependencias
 from tokens import *
-from utils import is_number, is_boolean
+from lexer.utils import is_number, is_boolean
 
 class Token():
   def __init__(self, value: str, token_type: str):
