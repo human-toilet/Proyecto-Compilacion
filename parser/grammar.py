@@ -7,3 +7,9 @@ equal, plus, num = G.Terminals('= + int')
 
 E %=  A + equal + A | num
 A %= num + plus + A | num
+
+sym_set = { 
+    '<number>': num,
+    '+': plus,
+    '=': equal
+}
