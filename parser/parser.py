@@ -24,8 +24,10 @@ class ShiftReduceParser:
             state = stack[-1]
             lookahead = w[cursor]
             if self.verbose: print(stack, '<---||--->', w[cursor:])
-            
-            action, tag = self.action[state, lookahead]            
+            try:
+                action, tag = self.action[state, lookahead]            
+            except:
+                raise Exception("Syntax Error")
             match action:
                 case self.SHIFT:
                     stack.append(lookahead)
