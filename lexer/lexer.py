@@ -30,7 +30,7 @@ class Lexer:
     self.__tokens = self.__tokenize() #tokens
       
   #tokenizar una cadena
-  def __tokenize(self) -> list:
+  def __tokenize(self) -> list[Token]:
     result = []
     token = ''
   
@@ -96,7 +96,7 @@ class Lexer:
             token = char
 
         #el token no es un operador
-        else:
+        else:   
           #lo unico que no puede tener es un operador
           if char in OPERATORS:
             result.append(self.__type_token(token))
@@ -122,7 +122,7 @@ class Lexer:
     return result
   
   #determinar el tipo de token
-  def __type_token(self, token: str):
+  def __type_token(self, token: str) -> Token:
     #si es un booleano
     if is_boolean(token):
       return Token(token, 'boolean')
@@ -149,6 +149,9 @@ class Lexer:
   
   #control de errores
   def __valid_tokens(self):
+    check = []
+    
+    #si hay una comilla abierta
     if self.__open_cuote:
       self.__open_cuote = False
       return (False, 'Missed "')
@@ -158,16 +161,33 @@ class Lexer:
         #si empieza con un numero
         if is_number(token.value[0])[0]:
           return (False, Exception(f'Invalid syntax: "{token.value}" line {token.line}; col {token.col}'))
-    
+
+        #si contiene un '.' una vez y no esta ni al principio ni al final
+        if '.' in token.value and token.value[0] != '.' and token.value[len(token.value) - 1] != '.' and token.value.count('.') == 1:
+          token_add = token.value.split('.')
+          
+          if self.__type_token(token_add[1]).token_type == '<id>':
+            check.append(Token(token_add[0], '<id>'))
+            check.append(Token('.', '.'))
+            check.append(Token(token_add[1], '<id>'))
+            continue
+          
+          else:
+            return (False, Exception(f'Invalid syntax: "{token.value}" line {token.line}; col {token.col}'))
+        
         #si contiene un token invalido
         for element in INVALID_ID:
           if element in token.value:
             return (False, Exception(f'Invalid syntax: "{token.value}" line {token.line}; col {token.col}'))
-      
+
+        check.append(token)
+        
+      else:
+        check.append(token)
+    
+    self.__tokens = check  
     return (True, 'ok')
         
   @property
   def tokens(self): return self.__tokens if self.__valid_tokens()[0] else self.__valid_tokens()[1]
   
-  
-
