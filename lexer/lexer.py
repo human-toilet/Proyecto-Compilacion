@@ -72,14 +72,19 @@ class Lexer:
           
         else:
           self.__current_col += 1
-          
+           
       #si el token no es vacio
       elif token != '':
         #si el token es un operador
         if token in OPERATORS:
           if len(token) == 1:
             #todo token de len = 1 mas '=' es un operador
-            if char == '=' and not token in ['^', '|', '&']:
+            if char == '=' and not token in ['^', '|', '&', ';', ':']:
+              self.__current_col += 1
+              token += char
+              
+            #flcha de funcion
+            if char == '>' and token == '=':
               self.__current_col += 1
               token += char
  
