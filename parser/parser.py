@@ -1,5 +1,5 @@
 from parser.lr1_automaton import build_LR1_automaton
-
+from parser.SROperations import SROperations
 class ShiftReduceParser:
     SHIFT = 'SHIFT'
     REDUCE = 'REDUCE'
@@ -51,30 +51,40 @@ class ShiftReduceParser:
     
 
 class LR1Parser(ShiftReduceParser):
+
     def _build_parsing_table(self):
-        G = self.G.AugmentedGrammar(True)
-        
-        automaton = build_LR1_automaton(G)
-        for i, node in enumerate(automaton):
-            if self.verbose: print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
+        aug_grammar = self.G.AugmentedGrammar(True)
+
+        if self.goto == {} or self.action == {}:
+            pass
+        else:
+            return
+
+        # os.chdir("..")
+
+        self.automaton = build_LR1_automaton(aug_grammar)
+        for i, node in enumerate(self.automaton):
+            if self.verbose:
+                print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
             node.idx = i
 
-        for node in automaton:
+        for node in self.automaton:
             idx = node.idx
             for item in node.state:
-        
-                X = item.production.Left
-                symbol = item.NextSymbol
-                if X == G.startSymbol and item.IsReduceItem:
-                    self._register(self.action,(idx,G.EOF),(self.OK,0))
-                elif item.IsReduceItem:
-                    k = self.G.Productions.index(item.production)
-                    for s in item.lookaheads:                        
-                        self._register(self.action,(idx,s),(self.REDUCE,k))
-                elif symbol.IsTerminal:
-                    self._register(self.action,(idx,symbol),(self.SHIFT,node.transitions[symbol.Name][0].idx))
+                if item.IsReduceItem:
+                    prod = item.production
+                    if prod.Left == aug_grammar.startSymbol:
+                        self._register(self.action, (idx, aug_grammar.EOF), (SROperations.OK, None))
+                    else:
+                        for lookahead in item.lookaheads:
+                            self._register(self.action, (idx, lookahead), (SROperations.REDUCE, prod))
                 else:
-                    self._register(self.goto,(idx,symbol),node.transitions[symbol.Name][0].idx)
+                    next_symbol = item.NextSymbol
+                    if next_symbol.IsTerminal:
+                        self._register(self.action, (idx, next_symbol),
+                                       (SROperations.SHIFT, node[next_symbol.Name][0].idx))
+                    else:
+                        self._register(self.goto, (idx, next_symbol), node[next_symbol.Name][0].idx)
         
     @staticmethod
     def _register(table, key, value):
