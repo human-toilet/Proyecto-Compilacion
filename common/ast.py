@@ -1,6 +1,334 @@
-import common.visitor as visitor
-from typing import List, Union
+from typing import List
+import math
 
+class Node():
+    pass
+        
+class AtomicNode(Node):
+    def __init__(self, lex):
+        self.lex = lex
+
+class UnaryNode(Node):
+    def __init__(self, node):
+        self.node = node
+
+    def evaluate(self):
+        value = self.node.evaluate()
+        return self.operate(value)
+
+    @staticmethod
+    def operate(value):
+        raise NotImplementedError()
+
+class BinaryNode(Node):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def evaluate(self):
+        lvalue = self.left.evaluate()
+        rvalue = self.right.evaluate()
+        return self.operate(lvalue, rvalue)
+
+    @staticmethod
+    def operate(lvalue, rvalue):
+        raise NotImplementedError()
+    
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+class ProgramNode(Node):
+    def __init__(self, statments) -> None:
+        super().__init__()
+        self.statments = statments
+        
+class IdentifierNode(Node):
+    def __init__(self, id) -> None:
+        super().__init__()
+        self.id = id
+             
+class PrintStatmentNode(Node):
+    def __init__(self, expression) -> None:
+        super().__init__()
+        self.expression = expression
+        
+#TODO creo que se deberia poner el type_annotation en el kern_assigment
+class KernAssigmentNode(Node):
+    def __init__(self, id, expression) -> None:
+        super().__init__()
+        self.id = id
+        self.expression = expression
+        
+class DestroyNode(KernAssigmentNode):
+    def __init__(self, id, expression) -> None:
+        super().__init__(id, expression)
+        
+# class LetNode(KernAssigmentNode):
+#     def __init__(self, id, expression) -> None:
+#         super().__init__(id, expression)
+        
+#? Podriamos instanciar la clase Type
+#* Eso se hace luego cuando se viita el nodo en el visitor
+class TypeNode(Node):
+    def __init__(self, type) -> None:
+        super().__init__()
+        self.type = type
+        
+class FunctionDefinitionNode(Node):
+    def __init__(self, id: IdentifierNode, type_annotation: TypeNode, parameters:list[dict], body) -> None:
+        super().__init__()
+        self.id: IdentifierNode = id
+        self.type_annotation = type_annotation
+        self.parameters = parameters
+        self.body = body
+        
+#--------------------------------Non_Create-Statment-----------------------------------------------------------------------------------------------------------------------#
+        
+class IfStructureNode(Node):
+    def __init__(self, condition, body, _elif, _else) -> None:
+        super().__init__()
+        self.condition = condition
+        self.body = body
+        self._elif = _elif
+        self._else = _else
+        
+class ElifStructureNode(Node):
+    def __init__(self, condition, body) -> None:
+        super().__init__()
+        self.condition = condition
+        self.body = body
+
+class ElseStructureNode(Node):
+    def __init__(self, body) -> None:
+        super().__init__()
+        self.body = body
+        
+class WhileStructureNode(Node):
+    def __init__(self, condition, body) -> None:
+        super().__init__()
+        self.condition = condition
+        self.body = body
+
+class ForStructureNode(Node):
+    def __init__(self, init_assigments: List[KernAssigmentNode], condition, increment_assigment: List[KernAssigmentNode], body) -> None:
+        super().__init__() 
+        self.init_assigments = init_assigments
+        self.condition = condition
+        self.increment_condition = increment_assigment
+        self.body = body
+        
+#-----------------------------------Class----------------------------------------------------------------------------------------------#
+class TypeDefinitionNode(Node):
+    def __init__(self, id, parameters:list[dict],inheritance, attributes: List[KernAssigmentNode], methods) -> None:
+        super().__init__()
+        self.id = id
+        self.parameters = parameters
+        self.inheritance = inheritance
+        self.attributes: List[KernAssigmentNode] = attributes
+        self.methods = methods
+        
+class InheritanceNode(Node):
+    def __init__(self, type) -> None:
+        super().__init__()
+        self.type = type
+
+#? Verificar que son los parametros type y args
+#* En new type (args = [param_1, param_2, ...])
+class KernInstanceCreationNode(BinaryNode):
+    def __init__(self, type, args):
+        super().__init__(type, args)
+        self.type = type
+        self.args = args
+        
+#? Ver bien que en que consiste el member acces
+#* x.method_name(parametro_1, parametro_2, ...)
+class MemberAccessNode(Node):
+    def __init__(self, base_object, object_property_to_acces, args) -> None:
+        super().__init__()
+        self.base_object = base_object
+        self.object_property_to_acces = object_property_to_acces
+        self.args = args
+        
+#! No son necesarios los operadores
+#------------------------------------Operators----------------------------------------------------------------------------------------------------#       
+# class BooleanOperator(Node):
+#     def __init__(self, operator) -> None:
+#         super().__init__()
+#         self.operator = operator
+        
+# class AritmeticOperator(Node):
+#     def __init__(self, operator) -> None:
+#         super().__init__()
+#         self.operator = operator
+        
+# class ConcatOperator(Node):
+#     def __init__(self, operator) -> None:
+#         super().__init__()
+#         self.operator = operator
+        
+#-------------------------------------------Abstrct-Expressions------------------------------------------------------------------------------------------#
+class BooleanExpression(BinaryNode):
+    def __init__(self, expression_1, expression_2) -> None:
+        super().__init__(expression_1, expression_2)
+        # self.expression_1 = expression_1
+        # self.expressiin_2 = expression_2
+        
+class AritmeticExpression(Node):
+    def __init__(self, expression_1, expression_2) -> None:
+        super().__init__()
+        self.expression_1 = expression_1
+        self.expression_2 = expression_2
+        
+#-------------------------------Aritmetic-Expressions-------------------------------------------------------------------------------------------------#
+class PlusExpressionNode(AritmeticExpression):
+    def __init__(self, expression_1, expresion_2) -> None:
+        super().__init__(expression_1, expresion_2)
+        
+class SubsExpressionNode(AritmeticExpression):
+    def __init__(self, expression_1, expresion_2) -> None:
+        super().__init__(expression_1, expresion_2)
+        self.expression_1 = expression_1
+        
+class DivExpressionNode(AritmeticExpression):
+    def __init__(self, expression_1, expresion_2) -> None:
+        super().__init__(expression_1, expresion_2)
+        
+class MultExpressionNode(AritmeticExpression):
+    def __init__(self, expression_1, expresion_2) -> None:
+        super().__init__(expression_1, expresion_2)
+class ModExpressionNode(AritmeticExpression):
+    def __init__(self, expression_1, expresion_2) -> None:
+        super().__init__(expression_1, expresion_2)
+class PowExpressionNode(AritmeticExpression):
+    def __init__(self, expression_1, expresion_2) -> None:
+        super().__init__(expression_1, expresion_2)
+           
+class NumberNode(Node):
+    def __init__(self, value) -> None:
+        super().__init__()
+        self.value = value
+class PINode(NumberNode):
+    def __init__(self) -> None:
+        super().__init__(math.pi)
+    
+#------------------------------------------------------------Math-Operations-----------------------------------------------------------------------------------#
+class MathOperationNode(UnaryNode):
+    def __init__(self, expression) -> None:
+        super().__init__(expression)
+        self.expression = expression
+
+class SqrtMathNode(MathOperationNode):
+    def __init__(self, expression) -> None:
+        super().__init__(expression)
+        
+class SinMathNode(MathOperationNode):
+    def __init__(self, expression) -> None:
+        super().__init__(expression)
+        
+class CosMathNode(MathOperationNode):
+    def __init__(self, expression) -> None:
+        super().__init__(expression)
+        
+class TanMathNode(MathOperationNode):
+    def __init__(self, expression) -> None:
+        super().__init__(expression)
+        self.expression = expression
+
+class ExpMathNode(MathOperationNode):
+    def __init__(self, expression) -> None:
+        super().__init__(expression)
+class RandomCallNode(Node):
+    def __init__(self) -> None:
+        super().__init__()
+        
+class LogCallNode(Node):
+    def __init__(self, base, expression) -> None:
+        super().__init__()
+        self.base = base
+        self.expression = expression
+
+#-----------------------------------Let-In--------------------------------------------------------------------------------------------------------------------#
+class LetInNode(Node):
+    def __init__(self, assigments, body) -> None:
+        super().__init__()
+        self.assigments = assigments
+        self.body = body
+        
+class LetInExpressionNode(Node):
+    def __init__(self, assigments, body) -> None:
+        super().__init__()
+        self.assigments = assigments
+        self.body = body 
+
+#----------------------------------Factor-Nodes----------------------------------------------------------------------------------------------------------------#
+class FunctionCallNode(Node):
+    def __init__(self, id, args) -> None:
+        super().__init__()
+        self.id = id
+        self.args = args
+
+class BooleanNode(Node):
+    def __init__(self, value) -> None:
+        super().__init__()
+        self.value = value
+        
+class StringNode(Node):
+    def __init__(self, value) -> None:
+        super().__init__()
+        self.value = value
+        
+class StringConcatNode(BinaryNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+class StringConcatWithSpaceNode(StringConcatNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+#TODO Ver que es esto
+class BoolIsTypeNode(BinaryNode):
+    def __init__(self, expression, type):
+        super().__init__(expression, type)
+        self.expression = expression
+        self.type = type
+        
+class BoolAndNode(BooleanExpression):
+    def __init__(self, expression_1, expression_2) -> None:
+        super().__init__(expression_1, expression_2)
+        
+class BoolOrNode(BooleanExpression):
+    def __init__(self, expression_1, expression_2) -> None:
+        super().__init__(expression_1, expression_2)
+
+class BoolCompAritNode(BinaryNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+class BoolNotNode(UnaryNode):
+    def __init__(self, node):
+        super().__init__(node)        
+class BoolCompLessNode(BoolCompAritNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+             
+class BoolCompGreaterNode(BoolCompAritNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+class BoolCompEqualNode(BoolCompAritNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+class BoolCompLessEqualNode(BoolCompAritNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+class BoolCompGreaterEqualNode(BoolCompAritNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
+class BoolCompNotEqualNode(BoolCompAritNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+        
 '''
 -Node
     -ProgramNode
@@ -44,403 +372,3 @@ from typing import List, Union
             -InexingNode
             -asNode
 '''
-
-
-class node:
-    """
-        Basic node class. The building block of the AST
-    """
-    pass
-
-
-class StatementNode(node):
-    """
-        A statement can be a Type definition, a method declaration, an expression or a protocol
-    """
-    pass
-
-
-class ExpressionNode(StatementNode):
-    '''
-        An expression in HULK is anything that has a value
-    '''
-
-    def __init__(self):
-        self.VALUE_TYPE = 'Object'
-        pass
-
-
-class ProgramNode(node):
-    '''
-        A program in HULK is a collection of statements
-    '''
-
-    def __init__(self, statements: list[StatementNode], expression: ExpressionNode):
-        self.STATEMENTS = statements
-        self.EXPRESSION = expression
-
-
-class ParameterNode(node):
-    '''
-        Represents a parameter for a function/method, a constructor for a Type or a let expression
-        A parameter must have a name, and the Type can be specified
-    '''
-
-    def __init__(self, name: str, type: str = 'Object'):
-        self.NAME = name
-        self.TYPE = type
-
-
-class FunctionNode(StatementNode):
-    '''
-        This contains a declaration of a function.
-        A function needs a name and an expression.
-        And it may contain parameters and a return Type
-    '''
-
-    def __init__(self, name: str, parameters: list[ParameterNode],
-                 corpus: ExpressionNode, type: str = 'Object'):
-        self.NAME = name
-        self.PARAMETERS = parameters
-        self.CORPUS = corpus
-        self.TYPE = type
-
-
-class TypeAtributeNode(node):
-    '''
-        This is an atribute of a class. It has a name and a value from a expression
-    '''
-
-    def __init__(self, param: ParameterNode, value: ExpressionNode):
-        self.VAR = param
-        self.VALUE = value
-
-
-class TypeNode(StatementNode):
-    '''
-        This contains a class declaration.
-        Contains a name and a corpus.
-        It may have a constructor and a parent in hierarchy
-        In case of hierarchy, you can call arguments for the parent
-    '''
-
-    def __init__(self, name: str, corpus: list[Union[FunctionNode, TypeAtributeNode]]
-                 , parameters: list[ParameterNode] = [], inherits: str = "Object",
-                 arguments: list[ExpressionNode] = []):
-        self.NAME = name
-        self.CORPUS = corpus
-        self.CONSTRUCTOR = parameters
-        self.INHERITS = inherits
-        self.ARGUMENTS = arguments
-
-
-class ProtocolMethodNode(node):
-    '''
-        This is a abstract method inside of a protocol.
-        Needs to have a name, a Type and a Typed Parameter List
-    '''
-
-    def __init__(self, name: str, parameters: List[ParameterNode], type: str):
-        self.NAME = name
-        self.PARAMETERS = parameters
-        self.TYPE = type
-
-
-class ProtocolNode(StatementNode):
-    '''
-        This is a protocol. It has a name and and a list of fully-Typed methods.
-        A protocol may extend another protocol
-    '''
-
-    def __init__(self, name: str, corpus: List[ProtocolMethodNode], extends: str = ''):
-        self.NAME = name
-        self.CORPUS = corpus
-        self.EXTENDS = extends
-
-
-class ExpressionBlockNode(ExpressionNode):
-    '''
-        This node represents a list of Expressions joined together.
-    '''
-
-    def __init__(self, expressions: List[ExpressionNode]):
-        self.EXPRESSIONS = expressions
-        self.VALUE_TYPE = 'Object'
-
-class LetNode(ExpressionNode):
-    '''
-        Contains a Let expression. Contains a list of variables,
-        his corresponding expressions for his values and the expression to aplied
-    '''
-
-    def __init__(self, variable_names: List[ParameterNode],
-                 variable_values: List[ExpressionNode],
-                 expression: ExpressionNode):
-        self.VARS = variable_names
-        self.VAR_VALUES = variable_values
-        self.EXPRESSION = expression
-        self.VALUE_TYPE = 'Object'
-
-
-class IfElseExpression(ExpressionNode):
-    '''
-        Contains the semantic of the conditionals.
-        It has a list of conditions (the condition of the if, 
-            then the condition of the first elif...)
-        And a list of expression (the if case, the first elif case... and the else case)
-    '''
-
-    def __init__(self, conditions: List[ExpressionNode], expressions: List[ExpressionNode]):
-        self.CONDITIONS = conditions
-        self.CASES = expressions
-        self.VALUE_TYPE = 'Object'
-
-
-class DestructiveExpression(ExpressionNode):
-    '''
-        This contains the semantic for := operator.
-        It has the varible name and the Expression.
-    '''
-
-    def __init__(self, name: str, expression: ExpressionNode):
-        self.NAME = name
-        self.EXPRESSION = expression
-        self.VALUE_TYPE = 'Object'
-
-
-class SelfVariableNode(ExpressionNode):
-    '''
-        The call of an atribute inside a class
-    '''
-
-    def __init__(self, is_self: bool, name: str):
-        self.IS_SELF = is_self
-        self.NAME = name
-        self.VALUE_TYPE = 'Object'
-
-
-class SelfDestructiveExpression(ExpressionNode):
-    '''
-        This is contains the semantic for := operator on the case that is for an attribute of a type
-    '''
-
-    def __init__(self, var: SelfVariableNode, expression: ExpressionNode):
-        self.VAR = var
-        self.EXPRESSION = expression
-        self.VALUE_TYPE = 'Object'
-
-
-class WhileNode(ExpressionNode):
-    '''
-        Has the semantic for a while cicle. Contains the condition and the expressions
-    '''
-
-    def __init__(self, condition: ExpressionNode, expression: ExpressionNode):
-        self.CONDITIONS = condition
-        self.EXPRESSION = expression
-        self.VALUE_TYPE = 'Object'
-
-
-class ForNode(ExpressionNode):
-    '''
-        Has the semantic for a for cicle. Contains the colection, the iterator and the expressions
-    '''
-
-    def __init__(self, name: str, collection: ExpressionNode, expression: ExpressionNode):
-        self.NAME = name
-        self.COLLECTION = collection
-        self.EXPRESSION = expression
-        self.VALUE_TYPE = 'Object'
-
-
-class NewNode(ExpressionNode):
-    '''
-        Contains the new operator. Contains the name of a Type and the constructor arguments
-    '''
-
-    def __init__(self, name: str, arguments: List[ExpressionNode]):
-        self.NAME = name
-        self.ARGS = arguments
-        self.VALUE_TYPE = 'Object'
-
-
-class OrAndExpression(ExpressionNode):
-    '''
-        Contains the operators &, |.
-    '''
-
-    def __init__(self, operation: str, left: ExpressionNode, right: ExpressionNode):
-        self.LEFT = left
-        self.RIGHT = right
-        self.OPERATION = operation
-        self.VALUE_TYPE = 'Object'
-
-
-class NotExpression(ExpressionNode):
-    '''
-        Contains the operator !.
-    '''
-
-    def __init__(self, expression: ExpressionNode):
-        self.EXPRESSION = expression
-        self.VALUE_TYPE = 'Object'
-
-
-class ComparationExpression(ExpressionNode):
-    '''
-        Contains the operators >, <, <=, >=, ==. Recive 2 expressions and compares them
-    '''
-
-    def __init__(self, operation: str, left: ExpressionNode, right: ExpressionNode = None):
-        self.LEFT = left
-        self.RIGHT = right
-        self.OPERATION = operation
-        self.VALUE_TYPE = 'Object'
-
-
-class IsExpression(ExpressionNode):
-    '''
-        Contains the operator is
-    '''
-
-    def __init__(self, left: ExpressionNode, name: str):
-        self.LEFT = left
-        self.NAME = name
-        self.VALUE_TYPE = 'Object'
-
-
-class StringConcatenationNode(ExpressionNode):
-    '''
-        Contains the @ and @@ operators
-    '''
-
-    def __init__(self, left: ExpressionNode
-                 , right: ExpressionNode, double: bool = False):
-        self.LEFT = left
-        self.RIGHT = right
-        self.DOUBLE = double
-        self.VALUE_TYPE = 'Object'
-
-
-class ArithmeticExpression(ExpressionNode):
-    '''
-        Contains all the arithmetic expressions:
-        + - * ** ^ / %
-        The unary expression -Expression is included has 0-Expression
-    '''
-
-    def __init__(self, operation: str, left: ExpressionNode
-                 , right: ExpressionNode):
-        self.LEFT = left
-        self.RIGHT = right
-        self.OPERATION = operation
-        self.VALUE_TYPE = 'Object'
-
-
-class AsNode(ExpressionNode):
-    '''
-        as operator
-    '''
-
-    def __init__(self, left: ExpressionNode, right: str):
-        self.EXPRESSION = left
-        self.TYPE = right
-        self.VALUE_TYPE = 'Object'
-
-
-class NumberNode(ExpressionNode):
-    '''
-        Contains a number value
-    '''
-
-    def __init__(self, value):
-        self.VALUE = value
-        self.VALUE_TYPE = 'Object'
-
-
-class StringNode(ExpressionNode):
-    '''
-        Contains a string value
-    '''
-
-    def __init__(self, value):
-        self.VALUE = value
-        self.VALUE_TYPE = 'Object'
-
-
-class BooleanNode(ExpressionNode):
-    '''
-        True or False
-    '''
-
-    def __init__(self, value):
-        self.VALUE = value
-        self.VALUE_TYPE = 'Object'
-
-
-class VariableNode(ExpressionNode):
-    '''
-        A variable
-    '''
-
-    def __init__(self, name: str):
-        self.NAME = name
-        self.VALUE_TYPE = 'Object'
-
-
-class FunctionCallNode(ExpressionNode):
-    '''
-        A function call. Recieves a name and arguments
-    '''
-
-    def __init__(self, name: str, arguments: List[ExpressionNode]):
-        self.FUNCT = name
-        self.ARGS = arguments
-        self.VALUE_TYPE = 'Object'
-
-
-class TypeFunctionCallNode(ExpressionNode):
-    '''
-        The combination of the last two
-    '''
-
-    def __init__(self, class_calling: ExpressionNode, name: str, arguments: List[ExpressionNode]):
-        self.CLASS = class_calling
-        self.FUNCT = name
-        self.ARGS = arguments
-        self.VALUE_TYPE = 'Object'
-
-
-class ListNode(ExpressionNode):
-    '''
-        Represents a list in code. It receives an array with its elements
-    '''
-
-    def __init__(self, expressions: List[ExpressionNode]):
-        self.ELEMENTS = expressions
-        self.VALUE_TYPE = 'Object'
-
-
-class ImplicitListNode(ExpressionNode):
-    '''
-        This is for a implicit list.
-        The operator is an operation to do to each element of a collection
-        The iterator is the name of a element from the collection in the operator
-    '''
-
-    def __init__(self, operator: ExpressionNode, iterator: str, collection: ExpressionNode):
-        self.OPERATION = operator
-        self.ITERATION = iterator
-        self.COLLECTION = collection
-        self.VALUE_TYPE = 'Object'
-
-
-class IndexingNode(ExpressionNode):
-    '''
-        This  node represents an indexing on a object
-    '''
-
-    def __init__(self, collection: ExpressionNode, index: ExpressionNode):
-        self.COLLECTION = collection
-        self.INDEX = index
-        self.VALUE_TYPE = 'Object'

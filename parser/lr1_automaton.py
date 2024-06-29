@@ -9,13 +9,16 @@ def build_LR1_automaton(G):
         construye el automata LR1 dado una gramatica
     """
 
-    #ssert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
+    assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
+    
+    firsts = compute_firsts(G)
+    firsts[G.EOF] = ContainerSet(G.EOF)
     
     start_production = G.startSymbol.productions[0]
     start_item = Item(start_production, 0, lookaheads=(G.EOF,))
     start = frozenset([start_item])
     
-    closure = closure_lr1(start, G)
+    closure = closure_lr1(start, firsts)
     automaton = State(frozenset(closure), True)
     
     pending = [ start ]
@@ -26,16 +29,15 @@ def build_LR1_automaton(G):
         current_state = visited[current]
         
         for symbol in G.terminals + G.nonTerminals:
-            # Your code here!!! (Get/Build `next_state`)
-            next_items = frozenset(goto_lr1(current_state.state,symbol,G))
+
+            next_items = goto_lr1(current_state.state,symbol,firsts,just_kernel=True)
             if not next_items:
                 continue
             try:
                 next_state = visited[next_items]
             except KeyError:
-                visited[next_items] = State(next_items,True)
                 pending.append(next_items)
-                next_state = visited[next_items]
+                visited[pending[-1]] = next_state = State(frozenset(goto_lr1(current_state.state, symbol, firsts)),True)
             
             current_state.add_transition(symbol.Name, next_state)
     
@@ -43,22 +45,18 @@ def build_LR1_automaton(G):
     return automaton
 
 
-def goto_lr1(items, symbol, G, just_kernel=False):
+def goto_lr1(items, symbol, first, just_kernel=False):
     """
         Calcula Goto(I,X) \n
         I = items \n
         X = symbols
     """
+    assert just_kernel or first is not None, '`firsts` must be provided if `just_kernel=False`'
     items = frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
-    return items if just_kernel else closure_lr1(items, G)
+    return items if just_kernel else closure_lr1(items, first)
 
 
-def closure_lr1(items, G):
-    """
-        Calcula  CL(I) (la Clausura de I)\n
-        In =  items\n
-    """
-
+def closure_lr1(items, first):
     closure = ContainerSet(*items)
     
     changed = True
@@ -66,10 +64,8 @@ def closure_lr1(items, G):
         changed = False
         
         new_items = ContainerSet()
-        # Your code here!!!
         for item in closure:
-            for new_item in expand(item,G):
-                new_items.add(new_item)            
+            new_items.extend(expand(item, first))
 
         changed = closure.update(new_items)
         
@@ -90,25 +86,23 @@ def compress(items):
     return { Item(x.production, x.pos, set(lookahead)) for x, lookahead in centers.items() }
 
 
-def expand(item, G):
+def expand(item, firsts):
     next_symbol = item.NextSymbol
     if next_symbol is None or not next_symbol.IsNonTerminal:
         return []
     
     lookaheads = ContainerSet()
-    firsts = compute_firsts(G)
-    firsts[G.EOF] = ContainerSet(G.EOF)
     
     for preview in item.Preview():
-        lookaheads.update(compute_local_first(firsts,preview))        
+        lookaheads.hard_update(compute_local_first(firsts,preview))        
     
     assert not lookaheads.contains_epsilon
     
-    output = []
-    for production in G.Productions:
-        if production.Left == next_symbol:
-            output.append(Item(production,0,lookaheads))
-    return output
+    #output = []
+    #for production in G.Productions:
+    #    if production.Left == next_symbol:
+    #        output.append(Item(production,0,lookaheads))
+    return [Item(x, 0, lookaheads) for x in next_symbol.productions]
 
 def compute_local_first(firsts, alpha):
     """
