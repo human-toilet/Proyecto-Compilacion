@@ -19,7 +19,7 @@ class ShiftReduceParser:
         stack = [ 0 ]
         cursor = 0
         output = []
-        
+        operations = []
         while True:
             state = stack[-1]
             lookahead = w[cursor]
@@ -30,18 +30,17 @@ class ShiftReduceParser:
                 raise Exception("Syntax Error")
             match action:
                 case self.SHIFT:
-                    stack.append(lookahead)
                     stack.append(tag)
+                    operations.append(self.SHIFT)
                     cursor += 1
                 case self.REDUCE:
-                    production = self.G.Productions[tag]
-                    X, beta = production
-                    for i in range(2 * len(beta)):
+                    ##production = self.G.Productions[tag]
+                    #X, beta = production
+                    for _ in range(len(tag.Right)):
                         stack.pop()
-                    l = stack[-1]
-                    stack.append(X.Name)
-                    stack.append(self.goto[l,X])
-                    output.append(production)
+                    stack.append(self.goto[stack[-1], tag.Left])
+                    operations.append(self.REDUCE)
+                    output.append(tag)
                 case self.OK:
                     break
                 case _:
@@ -54,11 +53,6 @@ class LR1Parser(ShiftReduceParser):
 
     def _build_parsing_table(self):
         aug_grammar = self.G.AugmentedGrammar(True)
-
-        if self.goto == {} or self.action == {}:
-            pass
-        else:
-            return
 
         # os.chdir("..")
 
@@ -81,11 +75,10 @@ class LR1Parser(ShiftReduceParser):
                 else:
                     next_symbol = item.NextSymbol
                     if next_symbol.IsTerminal:
-                        self._register(self.action, (idx, next_symbol),
-                                       (SROperations.SHIFT, node[next_symbol.Name][0].idx))
+                        self._register(self.action, (idx, next_symbol), (SROperations.SHIFT, node[next_symbol.Name][0].idx))
                     else:
                         self._register(self.goto, (idx, next_symbol), node[next_symbol.Name][0].idx)
-        
+        print("ok")
     @staticmethod
     def _register(table, key, value):
         assert key not in table or table[key] == value, 'Shift-Reduce or Reduce-Reduce conflict!!!'
