@@ -94,7 +94,7 @@ def expand(item, firsts):
     lookaheads = ContainerSet()
     
     for preview in item.Preview():
-        lookaheads.hard_update(compute_local_first(firsts,preview))        
+        lookaheads.update(compute_local_first(firsts,preview))        
     
     assert not lookaheads.contains_epsilon
     

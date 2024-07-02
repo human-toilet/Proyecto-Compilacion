@@ -46,7 +46,7 @@ class ShiftReduceParser:
                 case _:
                     raise Exception
         
-        return output
+        return output, operations
     
 
 class LR1Parser(ShiftReduceParser):
